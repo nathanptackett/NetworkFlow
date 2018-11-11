@@ -1,137 +1,203 @@
-<!DOCTYPE html>
-<html>
-   <head>
-      <title>Main</title>
-      <script  src="https://threejs.org/build/three.js"></script>
-      <script src="https://threejs.org/examples/js/renderers/CanvasRenderer.js"></script>
-      <script  src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+   <!DOCTYPE html>
+   <html>
+      <head>
+         <title>Main</title>
+         <script  src="https://threejs.org/build/three.js"></script>
+         <script  src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 
-      <script id="vertexShader" type="x-shader/x-vertex">
-         precision highp float;
+         <script id="vertexShader" type="x-shader/x-vertex">
+            precision highp float;
 
-         attribute vec3 position;
-         attribute vec3 normal;
+            attribute vec3 position;
 
-         varying vec3 vNormal;
-         varying vec3 vPosition;
+            varying vec3 vPosition;
 
-         uniform mat4 modelViewMatrix;
-         uniform mat4 projectionMatrix;
-         uniform mat3 normalMatrix;
-         uniform mat4 modelMatrix;
-         uniform mat4 viewMatrix;
+            uniform mat4 modelViewMatrix;
+            uniform mat4 projectionMatrix;
 
-         void main()	{
-            vNormal = normalize(normalMatrix*normal);
-            vPosition = position;
+            void main()   {
+               vPosition = position;
 
-            gl_Position = projectionMatrix*modelViewMatrix*vec4(position, 1.0 );
-         }
-      </script>
+               gl_Position = projectionMatrix*modelViewMatrix*vec4(position, 1.0 );
+            }
+         </script>
 
-      <script id="fragmentShader" type="x-shader/x-fragment">
-         precision highp float;
+         <script id="fragmentShader" type="x-shader/x-fragment">
+            precision highp float;
 
-         varying vec3 vPosition;
-         varying vec3 vNormal;
+            varying vec3 vPosition;
+            varying vec3 vNormal;
 
-         uniform int radius;
-         uniform vec2 mousePos;
-         uniform vec2 resolution;
+            uniform float ringWidth;
+            uniform vec3 ringColor;
+            uniform float spaceBetweenRings;
+            uniform vec3 pipeColor;
+            uniform float percentFilled;
 
-         void main()   {
-            if(vPosition.y > 0.0)
-               gl_FragColor = vec4(0.0, 1.0, 0.0, 0.25);
-            else
-               gl_FragColor = vec4(1.0, 0.0, 0.0, 0.25);
-         }
-      </script>
+            void main()   {
+               float newPosition = vPosition.y - (spaceBetweenRings + ringWidth)*percentFilled;
+               float posY;
+               bool positiveY;
+               if(newPosition < 0.0)
+               {
+                  posY = newPosition * -1.0;
+                  positiveY = false;
+               }
+               else
+               {
+                  posY = newPosition;
+                  positiveY = true;
+               }
 
-      <script>
-         // Add your own Javascript code/methods here.
-         var scene;
-         var camera;
-         var sphere;
-
-         function mainFunction()
-         {
-            let renderer = new THREE.WebGLRenderer( { antialias: true } );
-            renderer.setSize( window.innerWidth*.8, window.innerHeight*.8 );
-            renderer.setPixelRatio( window.devicePixelRatio );
-            renderer.setClearColor (0xD3D3D3, 1);
-            document.body.appendChild( renderer.domElement );
-
-            scene = new THREE.Scene();
-            let aspect = window.innerWidth / window.innerHeight;
-            camera = new THREE.PerspectiveCamera( 30, aspect, 1, 1000 );
-            camera.position.z = 15;
-            scene.add(camera);
-            let cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+               float moddedVal = mod(posY, ringWidth + spaceBetweenRings);
+               float distance = moddedVal - ringWidth/2.0;
+               if(distance < 0.0)
+                  distance *= -1.0;
             
-            let light = new THREE.AmbientLight( 0xFFFFFF );
-            scene.add( light );
-            
-            //Handle Resize of window
-            let resize = function () {
-               renderer.setSize(window.innerWidth*.8, window.innerHeight*.8);
-               camera.aspect = window.innerWidth / window.innerHeight;
-               camera.updateProjectionMatrix();
-            };
+               if(distance > (ringWidth / 2.0))
+                  distance -= ringWidth / 2.0;
+               float percentFilledToMiddle = distance / (ringWidth / 2.0);
+               if (moddedVal < ringWidth)
+               {
+                  if(positiveY)
+                  {
+                     gl_FragColor = vec4(ringColor*percentFilledToMiddle, 1.0);
+                  }
+                  else
+                     gl_FragColor = vec4(pipeColor, 1.0);
+               }
+               else
+               {
+                  if(positiveY)
+                     gl_FragColor = vec4(pipeColor, 1.0);
+                  else
+                  {
+                     gl_FragColor = vec4(ringColor*percentFilledToMiddle, 1.0);
+                  }
+               }
+            }
+         </script>
 
-            window.addEventListener("resize",resize, false);
+         <script>
+            // Add your own Javascript code/methods here.
+            var scene;
+            var camera;
+            var sphere;
+            var pipe;
+            var deltaDelta;
+            var deltaModifier = 1;
 
-            //render function
-            let render = function () {
-               requestAnimationFrame( render );
-               renderer.render( scene, camera );
-            };
+            function mainFunction()
+            {
+               let renderer = new THREE.WebGLRenderer( { antialias: true } );
+               renderer.setSize( window.innerWidth*.8, window.innerHeight*.8 );
+               renderer.setPixelRatio( window.devicePixelRatio );
+               renderer.setClearColor (0xD3D3D3, 1);
+               document.body.appendChild( renderer.domElement );
 
-            render();
-         }
+               scene = new THREE.Scene();
+               let aspect = window.innerWidth / window.innerHeight;
+               camera = new THREE.PerspectiveCamera( 30, aspect, 1, 1000 );
+               camera.position.z = 15;
+               scene.add(camera);
+               let cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+               
+               let light = new THREE.AmbientLight( 0xFFFFFF );
+               scene.add( light );
+               
+               //Handle Resize of window
+               let resize = function () {
+                  renderer.setSize(window.innerWidth*.8, window.innerHeight*.8);
+                  camera.aspect = window.innerWidth / window.innerHeight;
+                  camera.updateProjectionMatrix();
+               };
 
-         function getViewSpaceShader()
-         {
-            return new THREE.RawShaderMaterial({
-               vertexShader: document.getElementById('vertexShader').textContent,
-               fragmentShader: document.getElementById('fragmentShader').textContent,
-            }); 
-         }
+               window.addEventListener("resize",resize, false);
 
-         function addPipe(node1, node2)
-         {
-            let deltaX = node1.position.x - node2.position.x;
-            let deltaY = node1.position.y - node2.position.y;
-            let deltaZ = node1.position.z - node2.position.z;
+               //render function
+               delta = 0;
+               deltaDelta = .01;
+               let render = function () {
+                  if(delta > 1 || delta < -1)
+                        delta = 0;
+                  delta += deltaDelta;
+                  updateShaders(delta);
+                  requestAnimationFrame( render );
+                  renderer.render( scene, camera );
+               };
+               example();
+               render();
+            }
 
-            let length = Math.sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
-            let pipeGeometry = new THREE.CylinderGeometry(0.5, 0.5, length);
-            let  pipeMaterial = getViewSpaceShader();
-            let pipe = new THREE.Mesh(pipeGeometry, pipeMaterial);
+            function getDynamicPipeShader(delta)
+            {
+               return new THREE.RawShaderMaterial({
+                  vertexShader: document.getElementById('vertexShader').textContent,
+                  fragmentShader: document.getElementById('fragmentShader').textContent,
+                  uniforms: 
+                  {
+                     ringWidth: {type: "float", value: 0.3},
+                     ringColor: {type: "vec3", value: new THREE.Vector3(255/255, 223/225, 0/255)},
+                     spaceBetweenRings: {type: "float", value: 0.3},
+                     pipeColor: {type: "vec3", value: new THREE.Vector3(0, 0, 0)},
+                     percentFilled: {type: "float", value: delta}
+                  }
+               }); 
+            }
 
-            pipe.position.set((node1.position.x + node2.position.x) / 2, (node1.position.y + node2.position.y) / 2, (node1.position.z + node2.position.z) / 2);
-            pipe.lookAt(node1.position);
-            pipe.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI/2);
-            scene.add(pipe);
-            return pipe;
-         }
+            function updateShaders(delta)
+            {
+               //loop through all shaders we have
+                  //each shader has a delta, and a delta delta
+                  //the delta would be the current percent filled the shader is considered
+                  //the delta delta would be the amount that shader is to change each function call.
+                  //this number should be between 0.01 and 0.1. This represents the network flow in this edge
+               //if this pipe has negative flow, pass in delta*-1
+               let material = getDynamicPipeShader(delta);
+               pipe.material = material;
+            }
 
-         function addNode(x, y, z)
-         {
-            let nodeGeometry = new THREE.SphereGeometry(2);
-            let nodeMaterial = getViewSpaceShader();
-            let node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+            function addPipe(node1, node2)
+            {
+               let deltaX = node1.position.x - node2.position.x;
+               let deltaY = node1.position.y - node2.position.y;
+               let deltaZ = node1.position.z - node2.position.z;
+
+               let length = Math.sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
+               let pipeGeometry = new THREE.CylinderGeometry(0.5, 0.5, length);
+               let  pipeMaterial = getDynamicPipeShader(0);
+               pipe = new THREE.Mesh(pipeGeometry, pipeMaterial);
+
+               pipe.position.set((node1.position.x + node2.position.x) / 2, (node1.position.y + node2.position.y) / 2, (node1.position.z + node2.position.z) / 2);
+               pipe.lookAt(node1.position);
+               pipe.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI/2);
+               scene.add(pipe);
+               return pipe;
+            }
+
+            function addNode(x, y, z)
+            {
+               let nodeGeometry = new THREE.SphereGeometry(2);
+               let nodeMaterial = new THREE.MeshNormalMaterial();
+               let node = new THREE.Mesh(nodeGeometry, nodeMaterial);
 
 
-            node.position.set(x, y, z);
+               node.position.set(x, y, z);
 
-            scene.add(node);
-            return node;
-         }
-      </script>
-   </head>
-   
-   <body onload="mainFunction();">
-         <h1>--Nathan Tackett 4421778--</h1>
-   </body>
-   
-</html>
+               scene.add(node);
+               return node;
+            }
+
+            function example()
+            {
+               var n1 = addNode(0, 0, 0);
+               var n2 = addNode(10, 10, -10);
+               var pipe = addPipe(n1, n2);
+            }
+         </script>
+      </head>
+      
+      <body onload="mainFunction();">
+      </body>
+      
+   </html>
