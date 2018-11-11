@@ -50,18 +50,16 @@
                }
 
                float moddedVal = mod(posY, ringWidth + spaceBetweenRings);
-               float distance = moddedVal - ringWidth/2.0;
-               if(distance < 0.0)
-                  distance *= -1.0;
-            
-               if(distance > (ringWidth / 2.0))
-                  distance -= ringWidth / 2.0;
-               float percentFilledToMiddle = distance / (ringWidth / 2.0);
                if (moddedVal < ringWidth)
                {
                   if(positiveY)
                   {
-                     gl_FragColor = vec4(ringColor*percentFilledToMiddle, 1.0);
+                     float distanceToCenter = (ringWidth / 2.0) - moddedVal;
+                     if(distanceToCenter < 0.0)
+                        distanceToCenter *= -1.0;
+
+                     float percentToMiddle = distanceToCenter / (ringWidth / 2.0);
+                     gl_FragColor = vec4(ringColor * (1.0 - percentToMiddle), 1.0);
                   }
                   else
                      gl_FragColor = vec4(pipeColor, 1.0);
@@ -72,7 +70,13 @@
                      gl_FragColor = vec4(pipeColor, 1.0);
                   else
                   {
-                     gl_FragColor = vec4(ringColor*percentFilledToMiddle, 1.0);
+                     float locationOfCenter = spaceBetweenRings + ringWidth / 2.0;
+                     float distanceToCenter = locationOfCenter - moddedVal;
+                     if(distanceToCenter < 0.0)
+                        distanceToCenter *= -1.0;
+                     
+                     float percentToMiddle = distanceToCenter / (ringWidth/2.0);
+                     gl_FragColor = vec4(ringColor*(1.0 - percentToMiddle), 1.0);
                   }
                }
             }
@@ -92,7 +96,7 @@
                let renderer = new THREE.WebGLRenderer( { antialias: true } );
                renderer.setSize( window.innerWidth*.8, window.innerHeight*.8 );
                renderer.setPixelRatio( window.devicePixelRatio );
-               renderer.setClearColor (0xD3D3D3, 1);
+               renderer.setClearColor (0x0099FF, 1);
                document.body.appendChild( renderer.domElement );
 
                scene = new THREE.Scene();
@@ -136,9 +140,9 @@
                   fragmentShader: document.getElementById('fragmentShader').textContent,
                   uniforms: 
                   {
-                     ringWidth: {type: "float", value: 0.3},
-                     ringColor: {type: "vec3", value: new THREE.Vector3(255/255, 223/225, 0/255)},
-                     spaceBetweenRings: {type: "float", value: 0.3},
+                     ringWidth: {type: "float", value: 0.5},
+                     ringColor: {type: "vec3", value: new THREE.Vector3(0/255, 202/225, 231/255)},
+                     spaceBetweenRings: {type: "float", value: 0.5},
                      pipeColor: {type: "vec3", value: new THREE.Vector3(0, 0, 0)},
                      percentFilled: {type: "float", value: delta}
                   }
