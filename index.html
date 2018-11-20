@@ -87,8 +87,6 @@
          </script>
 
          <script>
-            // Add your own Javascript code/methods here.
-
             var scene;
             var camera;
             var sphere;
@@ -109,7 +107,8 @@
             {  
                $('#generate').click(function(){
                   var tablesInput = getTable("input");
-                  console.log(tablesInput);
+                  console.log("Ford Fulkerson, Max Flow: " + fordFulkerson(tablesInput, 1, 5));
+
                   for(var i = 0; i < tablesInput.length; i++){
                      for(var j = 0; j < tablesInput[i].length; j++){
                         if(tablesInput[i][j] != ""){
@@ -129,7 +128,7 @@
                renderer.setSize( window.innerWidth*.6, window.innerHeight*.5 );
                renderer.setPixelRatio( window.devicePixelRatio );
                container.appendChild( renderer.domElement );
-
+               
                scene = new THREE.Scene();
                let aspect = window.innerWidth / window.innerHeight;
                camera = new THREE.PerspectiveCamera( 60, aspect, 1, 1000 );
@@ -237,16 +236,6 @@
                return node;
             }
 
-            // function example()
-            // {
-            //    var n1 = addNode(0, 0, 0);
-            //    var n2 = addNode(10, 10, -10);
-            //    var n3 = addNode(5, 5, 5);
-            //    var pipe = addPipe(n1, n2, 0.05);
-            //    var pipe2 = addPipe(n2, n3, 0.05);
-
-            // }
-
             function getTable(tableId) {
                 var t = document.getElementById(tableId);
                 var result = [];
@@ -261,7 +250,68 @@
                 return result;
             }
 
+            function bfs(rGraph, source, sink, parent)
+            {
+               var visited = [];
+               var queue = [];
+               //Number of Vertices
+               var V=rGraph.length;
+               
+               for (var i = 0; i < V; i++) {
+                    visited[i] = false;
+                }
 
+               queue.push(source);
+               visited[source] = true;
+               parent[source] = -1;
+
+               while(queue.length != 0)
+               {
+                  var u = queue.shift();
+
+                  for(var v=0; v<V; v++)
+                  {
+                     if(visited[v]==false && rGraph[u][v] > 0)
+                     {
+                        queue.push(v);
+                        parent[v] = u;
+                        visited[v] = true;
+                     }
+                  }
+               }
+               return (visited[sink] == true);
+            }
+
+            function fordFulkerson(graph, start, sink) {
+               var rGraph = [];
+               for(var u=0; u<graph.length; u++) {
+                  var temp = [];
+                  for(v=0; v<graph.length; v++){
+                     temp.push(graph[u][v]);
+                  }
+                  rGraph.push(temp);
+               }
+
+               var parent = [];
+               var maxFlow = 0;
+
+               while(bfs(rGraph, start, sink, parent)) {
+                  var pathFlow = Number.MAX_VALUE;
+                  for (var v = sink; v != start; v = parent[v]) {
+                     u = parent[v];
+                     pathFlow = Math.min(pathFlow, rGraph[u][v]);
+                  }
+                  for(var v=sink; v!=start; v=parent[v])
+                  {
+                     u = parent[v];
+                     rGraph[u][v] -= pathFlow;
+                     rGraph[v][u] += pathFlow;
+                  }
+
+                  maxFlow += pathFlow;
+               }
+               return maxFlow;
+            }
          </script>
       </head>
       
@@ -348,8 +398,8 @@
             <div class="panel-heading" style="text-align: center; height: 60px;"><h4>Graph</h4></div>
                <div class="test" id="canvas"/>
             </div>
-         </div>
-       </div>
+            </div>
+          </div>
 
 
 
