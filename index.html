@@ -105,14 +105,10 @@
             nodePos.push({ x: 25, y: 5, z: 10});
             nodePos.push({ x: 7, y: 22, z: -15});
 
-
-
-
             function mainFunction()
             {  
                $('#generate').click(function(){
                   var tablesInput = getTable("input");
-                  //updateShaders(0.03);
                   console.log(tablesInput);
                   for(var i = 0; i < tablesInput.length; i++){
                      for(var j = 0; j < tablesInput[i].length; j++){
@@ -124,24 +120,20 @@
                         }
                      }
                   }
-                  //render();
                })
 
                container = document.getElementById( 'canvas' );
                document.body.appendChild( container );
 
                let renderer = new THREE.WebGLRenderer( { antialias: true } );
-               renderer.setSize( window.innerWidth*.6, window.innerHeight*.6 );
+               renderer.setSize( window.innerWidth*.6, window.innerHeight*.5 );
                renderer.setPixelRatio( window.devicePixelRatio );
-               //renderer.setClearColor (0x0099FF, 1);
-               //document.body.appendChild( renderer.domElement );
                container.appendChild( renderer.domElement );
 
                scene = new THREE.Scene();
                let aspect = window.innerWidth / window.innerHeight;
                camera = new THREE.PerspectiveCamera( 60, aspect, 1, 1000 );
                camera.position.z = 50;
-               //camera.position.x = 20;
                camera.position.y = 30;
                scene.add(camera);
                let cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -151,7 +143,7 @@
                
                //Handle Resize of window
                let resize = function () {
-                  renderer.setSize(window.innerWidth*.6, window.innerHeight*.6);
+                  renderer.setSize(window.innerWidth*.6, window.innerHeight*.5);
                   camera.aspect = window.innerWidth / window.innerHeight;
                   camera.updateProjectionMatrix();
                };
@@ -166,8 +158,6 @@
                   requestAnimationFrame( render );
                   renderer.render( scene, camera );
                };
-               //example();
-               //render();
             }
 
             function getDynamicEdgeShader(delta)
@@ -247,15 +237,15 @@
                return node;
             }
 
-            function example()
-            {
-               var n1 = addNode(0, 0, 0);
-               var n2 = addNode(10, 10, -10);
-               var n3 = addNode(5, 5, 5);
-               var pipe = addPipe(n1, n2, 0.05);
-               var pipe2 = addPipe(n2, n3, 0.05);
+            // function example()
+            // {
+            //    var n1 = addNode(0, 0, 0);
+            //    var n2 = addNode(10, 10, -10);
+            //    var n3 = addNode(5, 5, 5);
+            //    var pipe = addPipe(n1, n2, 0.05);
+            //    var pipe2 = addPipe(n2, n3, 0.05);
 
-            }
+            // }
 
             function getTable(tableId) {
                 var t = document.getElementById(tableId);
@@ -276,10 +266,10 @@
       </head>
       
       <body onload="mainFunction();">
-            <div class="row">
-              <div class="col-sm-8 col-sm-offset-2">
+         <div class="title" style="text-align: center"><h2>Ford Fulkerson Algorithm</h2></div>
+              <div class="col-md-4">
                 <div class="panel panel-default">
-                  <div class="panel-heading" style="text-align: center"><h3>Input Edge Weights</h3></div>
+                  <div class="panel-heading" style="text-align: center; height: 60px;"><h4>Input Edge Weights</h4></div>
                   <div class="panel-body">
 
                     <table class="table table-bordered table-condensed" id="input">
@@ -353,12 +343,9 @@
                 </div>
              </div>
           </div>
-       </div>
-
-       <div class="row">
-         <div class="col-sm-8 col-sm-offset-2">
+          <div class="col-md-8">
             <div class="panel panel-default">
-            <div class="panel-heading" style="text-align: center"><h3>Graph</h3></div>
+            <div class="panel-heading" style="text-align: center; height: 60px;"><h4>Graph</h4></div>
                <div class="test" id="canvas"/>
             </div>
          </div>
