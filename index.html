@@ -4,6 +4,7 @@
          <title>Main</title>
          <script  src="https://threejs.org/build/three.js"></script>
          <script  src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+         <script  src="./LinkedList.js"></script>
 
          <script id="vertexShader" type="x-shader/x-vertex">
             precision highp float;
@@ -22,7 +23,7 @@
             }
          </script>
 
-         <script id="fragmentShader" type="x-shader/x-fragment">
+         <script id="edgeShader" type="x-shader/x-fragment">
             precision highp float;
 
             varying vec3 vPosition;
@@ -90,6 +91,7 @@
             var pipe;
             var deltaDelta;
             var deltaModifier = 1;
+            var EdgeList;
 
             function mainFunction()
             {
@@ -122,10 +124,7 @@
                delta = 0;
                deltaDelta = .01;
                let render = function () {
-                  if(delta > 1 || delta < -1)
-                        delta = 0;
-                  delta += deltaDelta;
-                  updateShaders(delta);
+                  updateShaders();
                   requestAnimationFrame( render );
                   renderer.render( scene, camera );
                };
@@ -133,11 +132,11 @@
                render();
             }
 
-            function getDynamicPipeShader(delta)
+            function getDynamicedgeShader(delta)
             {
                return new THREE.RawShaderMaterial({
                   vertexShader: document.getElementById('vertexShader').textContent,
-                  fragmentShader: document.getElementById('fragmentShader').textContent,
+                  fragmentShader: document.getElementById('edgeShader').textContent,
                   uniforms: 
                   {
                      ringWidth: {type: "float", value: 0.5},
@@ -149,7 +148,7 @@
                }); 
             }
 
-            function updateShaders(delta)
+            function updateShaders()
             {
                //loop through all shaders we have
                   //each shader has a delta, and a delta delta
@@ -157,11 +156,21 @@
                   //the delta delta would be the amount that shader is to change each function call.
                   //this number should be between 0.01 and 0.1. This represents the network flow in this edge
                //if this pipe has negative flow, pass in delta*-1
-               let material = getDynamicPipeShader(delta);
-               pipe.material = material;
+               var p = EdgeList.head;
+               while(p != null)
+               {
+                  var thisPipeObject = p.value;
+                  thisPipeObject.delta += thisPipeObject.deltaDelta;
+                  if(thisPipeObject.delta > 1 || thisPipeObject.delta < -1)
+                     thisPipeObject.delta = 0;
+                  thisPipeObject.edge.material = getDynamicedgeShader(thisPipeObject.delta);
+
+                  //Go to the next pipe
+                  p = p.next;
+               }
             }
 
-            function addPipe(node1, node2)
+            function addPipe(node1, node2, flow)
             {
                let deltaX = node1.position.x - node2.position.x;
                let deltaY = node1.position.y - node2.position.y;
@@ -169,13 +178,23 @@
 
                let length = Math.sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
                let pipeGeometry = new THREE.CylinderGeometry(0.5, 0.5, length);
-               let  pipeMaterial = getDynamicPipeShader(0);
+               let  pipeMaterial = getDynamicedgeShader(0);
                pipe = new THREE.Mesh(pipeGeometry, pipeMaterial);
 
                pipe.position.set((node1.position.x + node2.position.x) / 2, (node1.position.y + node2.position.y) / 2, (node1.position.z + node2.position.z) / 2);
                pipe.lookAt(node1.position);
                pipe.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI/2);
                scene.add(pipe);
+
+               //This is the first edge
+               if(EdgeList == null)
+               {
+                  EdgeList = new LinkedList({edge:pipe, delta:0, deltaDelta:0.01});
+                  return pipe;
+               }
+
+               //Add this to the existing edge
+               EdgeList.addToHead({edge:pipe, delta:0, deltaDelta: 0.01});
                return pipe;
             }
 
@@ -196,7 +215,7 @@
             {
                var n1 = addNode(0, 0, 0);
                var n2 = addNode(10, 10, -10);
-               var pipe = addPipe(n1, n2);
+               var pipe = addPipe(n1, n2, 0.01);
             }
          </script>
       </head>
