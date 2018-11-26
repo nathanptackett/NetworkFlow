@@ -6,8 +6,8 @@
          <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
          <script  src="./LinkedList.js"></script>
          <script  src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
-         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-         <link rel="stylesheet" href="style.css">
+         <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+         <link rel="stylesheet" type="text/css" href="style.css">
 
          <script id="vertexShader" type="x-shader/x-vertex">
             precision highp float;
@@ -98,12 +98,12 @@
             var flowPath = [];
 
             var nodePos = [];
-            nodePos.push({ x: 0, y: -10, z: 0});
-            nodePos.push({ x: 0, y: 10, z: 0});
-            nodePos.push({ x: 35, y: -15, z: 0});
-            nodePos.push({ x: -37, y: 20, z: 0});
-            nodePos.push({ x: 35, y: 15, z: 0});
-            nodePos.push({ x: -37, y: -15, z: 0});
+            nodePos.push({ x: -30, y: 0, z: 0});
+            nodePos.push({ x: -15, y: 15, z: 0});
+            nodePos.push({ x: -15, y: 0, z: 15});
+            nodePos.push({ x: -15, y: -15, z: 0});
+            nodePos.push({ x: 0, y: 0, z: -7});
+            nodePos.push({ x: 15, y: 0, z: 0});
 
             function mainFunction()
             {  
@@ -126,8 +126,8 @@
                   for(var i = 0; i < tablesInput.length; i++){
                      for(var j = 0; j < tablesInput[i].length; j++){
                         if(tablesInput[i][j] != ""){
-                           var n1 = addNode(nodePos[i]['x'], nodePos[i]['y'], nodePos[i]['z']);
-                           var n2 = addNode(nodePos[j]['x'], nodePos[j]['y'], nodePos[j]['z']);
+                           var n1 = addNode(nodePos[i]['x'], nodePos[i]['y'], nodePos[i]['z'], i);
+                           var n2 = addNode(nodePos[j]['x'], nodePos[j]['y'], nodePos[j]['z'], j);
                            var pipe = addPipe(n1, n2, tablesInput[i][j]*0.001);
                            render();
                         }
@@ -148,6 +148,7 @@
                let renderer = new THREE.WebGLRenderer( { antialias: true } );
                renderer.setSize( window.innerWidth*.6, window.innerHeight*.5 );
                renderer.setPixelRatio( window.devicePixelRatio );
+               renderer.setClearColor(0xCDCDCD);
                container.appendChild( renderer.domElement );
                
                scene = new THREE.Scene();
@@ -158,7 +159,7 @@
                scene.add(camera);
                let cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
                
-               let light = new THREE.AmbientLight( 0xFFFFFF );
+               let light = new THREE.DirectionalLight();
                scene.add( light );
                
                //Handle Resize of window
@@ -244,12 +245,33 @@
                return pipe;
             }
 
-            function addNode(x, y, z)
+            function addNode(x, y, z, nodeNumber)
             {
+               var nodeColor;
+               switch(nodeNumber)
+               {
+                  case 0:
+                     nodeColor = 0xFFFFFF;
+                     break;
+                  case 1:
+                     nodeColor = 0xFFFF00;
+                     break;
+                  case 2:
+                     nodeColor = 0xFF00FF;
+                     break;
+                  case 3:
+                     nodeColor = 0x00FFFF;
+                     break;
+                  case 4:
+                     nodeColor = 0xFF0000;
+                     break;
+                  case 5:
+                     nodeColor = 0x686868;
+                     break;
+               }
                let nodeGeometry = new THREE.SphereGeometry(2);
-               let nodeMaterial = new THREE.MeshNormalMaterial();
+               let nodeMaterial = new THREE.MeshLambertMaterial({color: nodeColor});
                let node = new THREE.Mesh(nodeGeometry, nodeMaterial);
-
 
                node.position.set(x, y, z);
 
@@ -341,10 +363,14 @@
                      u = parent[v];
                      rGraph[u][v] -= pathFlow;
                      rGraph[v][u] += pathFlow;
+                     console.log(u+" to "+v+" is now "+pathFlow)
                   }
                   flowPath.push({x: parseInt(x), y: parseInt(y), flow: pathFlow});
                   maxFlow += pathFlow;
                }
+
+               for(var i = 0; i < rGraph.length; i++)
+                  console.log(rGraph[i]);
                return maxFlow;
             }
          </script>
@@ -361,15 +387,15 @@
                      <tbody>
                         <tr>
                            <th>Nodes</th>
-                           <th>0</th>
-                           <th>1</th>
-                           <th>2</th>
-                           <th>3</th>
-                           <th>4</th>
-                           <th>5</th>
+                           <th id="zero">0</th>
+                           <th id="one">1</th>
+                           <th id="two">2</th>
+                           <th id="three">3</th>
+                           <th id="four">4</th>
+                           <th id="five">5</th>
                         </tr>
                        <tr>
-                         <th>0</th>
+                         <th id="zero">0</th>
                          <td><input type="text" class="form-control" disabled="disabled" /></td>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" /></td>
@@ -378,7 +404,7 @@
                          <td><input type="text" class="form-control" /></td>
                        </tr>
                        <tr>
-                         <th>1</th>
+                         <th id="one">1</th>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" disabled="disabled"/></td>
                          <td><input type="text" class="form-control" /></td>
@@ -387,7 +413,7 @@
                          <td><input type="text" class="form-control" /></td>
                        </tr>
                        <tr>
-                         <th>2</th>
+                         <th id="two">2</th>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" disabled="disabled"/></td>
@@ -396,7 +422,7 @@
                          <td><input type="text" class="form-control" /></td>
                        </tr>
                        <tr>
-                         <th>3</th>
+                         <th id="three">3</th>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" /></td>
@@ -405,7 +431,7 @@
                          <td><input type="text" class="form-control" /></td>
                        </tr>
                        <tr>
-                         <th>4</th>
+                         <th id="four">4</th>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" /></td>
@@ -414,7 +440,7 @@
                          <td><input type="text" class="form-control" /></td>
                        </tr>
                        <tr>
-                         <th>5</th>
+                         <th id="five">5</th>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" /></td>
                          <td><input type="text" class="form-control" /></td>
