@@ -1,7 +1,7 @@
    <!DOCTYPE html>
    <html>
       <head>
-         <title>Main</title>
+         <title>Ford Fulkerson</title>
          <script  src="https://threejs.org/build/three.js"></script>
          <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
          <script  src="./LinkedList.js"></script>
@@ -87,16 +87,24 @@
          </script>
 
          <script>
+            //General globals
             var scene;
-            var camera;
-            var sphere;
-            var pipe;
-            var deltaDelta;
-            var deltaModifier = 1;
+            let camera;
             var EdgeList;
 
+            //Globals that hold the current max and min found flow, and the max and min values of deltaDelta
+            var maxFlow = Number.MIN_VALUE;
+            var minNonZeroFlow = Number.MAX_VALUE;
+            const MIN_DELTA_DELTA = 0.01;
+            const MAX_DELTA_DELTA = 0.1;
+
+            //Stores flow information from Ford Fulkerson
             var flowPath = [];
 
+            //Mouse info for intersection detection
+            let mouse = null;
+
+            //Hard coded node positions
             var nodePos = [];
             nodePos.push({ x: -30, y: 0, z: 0});
             nodePos.push({ x: -15, y: 15, z: 0});
@@ -106,8 +114,8 @@
             nodePos.push({ x: 15, y: 0, z: 0});
 
             function mainFunction()
-            {  
-
+            {
+               let renderCalled = false;
                $('#generate').click(function(){
                   clearScene();
                   var start = document.getElementById("start").value;
@@ -118,26 +126,24 @@
                   $('#alert').empty();
                   $('#alert').append("Using Ford Fulkerson, the Max Flow from " + start + " to " + end + " is " + maxFlow);
 
-                  // flowPath holds the edges and nodes which make up the max flow.
-                  for(var i = 0; i < flowPath.length; i++){
-                    console.log(flowPath[i]);
-                  }
-
                   for(var i = 0; i < tablesInput.length; i++){
                      for(var j = 0; j < tablesInput[i].length; j++){
                         if(tablesInput[i][j] != ""){
                            var n1 = addNode(nodePos[i]['x'], nodePos[i]['y'], nodePos[i]['z'], i);
                            var n2 = addNode(nodePos[j]['x'], nodePos[j]['y'], nodePos[j]['z'], j);
-                           var pipe = addPipe(n1, n2, tablesInput[i][j]*0.001);
-                           render();
+                           var pipe = addPipe(n1, n2, tablesInput);
                         }
                      }
                   }
+
+                  //Make sure to only call render() once, or some weird things can happen
+                  if(!renderCalled)
+                     render();
+                  renderCalled = true;
                })
 
                $('#clear').click(function(){
                   clearScene();
-                  flowPath = [];
                   $('#alert').css("visibility", "hidden");
                   $('#alert').empty();
                })
@@ -168,14 +174,39 @@
                   camera.aspect = window.innerWidth / window.innerHeight;
                   camera.updateProjectionMatrix();
                };
-
                window.addEventListener("resize",resize, false);
 
+               //Handle mouse moving
+               let mouseMoveEvent = function (e) {
+
+                  let canvasLeft = $("canvas").position().left;
+                  let canvasTop = $("canvas").position().top;
+                  let canvasWidth = $("canvas").width();
+                  let canvasHeight = $("canvas").height();
+
+                  if(e.x < canvasLeft || e.y < canvasTop || e.x > canvasLeft + canvasWidth || e.y > canvasTop + canvasHeight)
+                  {
+                     mouse = null;
+                  }
+
+                  mouse = {x: e.x, y: e.y, absoluteX: e.x, absoluteY:e.y};
+                  mouse.x -= canvasLeft;
+                  mouse.y -= canvasTop;
+
+                  //At this point, mouse.x and mouse.y are relative to the canvas, do calculation found on three.js intersection tutorial
+                  mouse.x = (mouse.x / canvasWidth)*2 - 1;
+                  mouse.y = -(mouse.y / canvasHeight)*2 + 1;
+               };
+
+               window.addEventListener("mousemove", mouseMoveEvent, false);
+
+               //The last text element that got added by handleIntersections
+               let last_element = null;
+
                //render function
-               delta = 0;
-               deltaDelta = .01;
                let render = function () {
                   updateShaders();
+                  last_element = handleIntersections(last_element);
                   requestAnimationFrame( render );
                   renderer.render( scene, camera );
                };
@@ -197,57 +228,206 @@
                }); 
             }
 
-            function updateShaders(delta)
+            function updateShaders()
             {
-               //loop through all shaders we have
-                  //each shader has a delta, and a delta delta
-                  //the delta would be the current percent filled the shader is considered
-                  //the delta delta would be the amount that shader is to change each function call.
-                  //this number should be between 0.01 and 0.1. This represents the network flow in this edge
-               //if this pipe has negative flow, pass in delta*-1
                var p = EdgeList.head;
                while(p != null)
                {
                   var thisPipeObject = p.value;
-                  thisPipeObject.delta += thisPipeObject.deltaDelta;
+                  var flow = thisPipeObject.flow;
+
+                  //Update min and max
+                  if (flow > maxFlow)
+                     maxFlow = flow;
+
+                  //Ignore flow's of 0 because we only want the minimum of all edges with flow
+                  if (flow < minNonZeroFlow && flow != 0)
+                     minNonZeroFlow = flow;
+
+                  //calculate deltaDelta for this pipe
+                  var deltaDelta;
+                  
+                  //The min flow should have deltaDelta of 0.01, max of 0.1
+                  //The rest should have a flow that is flow/maxflow * MAX_DELTA_DELTA
+                  if(flow == minNonZeroFlow)
+                  {
+                     deltaDelta = MAX_DELTA_DELTA;
+                  }
+                  else if(flow == maxFlow)
+                  {
+                     deltaDelta = MIN_DELTA_DELTA;
+                  }
+                  else if(flow == 0)
+                  {
+                     deltaDelta = 0;
+                  }
+                  else
+                     deltaDelta = ((flow - minNonZeroFlow) / (maxFlow - minNonZeroFlow)) * MAX_DELTA_DELTA;
+
+                  if(thisPipeObject)
+                     thisPipeObject.delta += deltaDelta;
+
                   if(thisPipeObject.delta > 1 || thisPipeObject.delta < -1)
                      thisPipeObject.delta = 0;
+
                   thisPipeObject.edge.material = getDynamicEdgeShader(thisPipeObject.delta);
+
                   //Go to the next pipe
                   p = p.next;
                }
             }
 
-            function addPipe(node1, node2, delta)
+            function handleIntersections(last_element)
+            {
+               //Remove the last info box that we created
+               if(last_element != null)
+                  document.getElementById("body").removeChild(last_element);
+               last_element = null;
+
+               //mouse isnt even in canvas, don't do anything
+               if(mouse == null)
+                  return last_element;
+
+               //Run code found on threejs intersection tutorial
+               let vector = new THREE.Vector3(mouse.x, mouse.y, 1);
+               vector.unproject(camera);
+
+               let ray = new THREE.Raycaster(camera.position, 
+                                             vector.sub(camera.position).normalize());
+
+               let intersects = ray.intersectObjects(scene.children);
+               
+               if(intersects.length > 0)
+               {
+                  //There could be more than one intersection but we are only 
+                  //interested in the first
+                  let firstIntersect = intersects[0].object;
+
+                  //If the object we are over has a NodeNumber, it must be a Node
+                  let overNode = firstIntersect.NodeNumber != undefined;
+
+                  //If we aren't over a node, we must be over an Edge
+                  let overEdge = !overNode;
+
+                  //The width and height in px of the info box
+                  let infoBoxWidth = 100;
+                  let infoBoxHeight = 100;
+
+                  //create an info box to display info about the element we are currently hovering over
+                  let div = document.createElement("div");
+                  div.style.width = infoBoxWidth+"px";
+                  div.style.height = infoBoxHeight+"px";
+                  div.style.border = "1px solid black";
+                  div.style.position = "absolute";
+                  div.style.left = (mouse.absoluteX - infoBoxWidth / 2) + "px";
+                  div.style.top = (mouse.absoluteY - (infoBoxHeight + 10)) + "px";
+                  div.style.backgroundColor = "white";
+                  if (overEdge)
+                  {
+                     //If we are hovering on an edge, display the flow and edge weight
+                     div.innerHTML = "Flow: " + firstIntersect.flow;
+                     div.innerHTML += "<br />";
+                     div.innerHTML += "Weight: " + firstIntersect.weight;
+                  }
+                  else if (overNode)
+                  {
+                     //If we are hovering over a node, display the flow in and the flow out. (These should always be the same unless you are on the source or sink)
+                     let flowIn = 0;
+                     let flowOut = 0;
+                     let NodeNumber = firstIntersect.NodeNumber;
+
+                     //loop through flowPath and count incoming/outcoming 
+                     for(let i = 0; i < flowPath.length; i++)
+                     {
+                        //This is flow out of our node
+                        if(flowPath[i].x == NodeNumber)
+                           flowOut += flowPath[i].flow;
+
+                        //This is flow into our node
+                        if(flowPath[i].y == NodeNumber)
+                           flowIn += flowPath[i].flow;
+                     }
+
+                     div.innerHTML = "In: " + flowIn;
+                     div.innerHTML += "<br />";
+                     div.innerHTML += "Out: " + flowOut;
+                  }
+
+                  //Add it to the body
+                  document.getElementById("body").appendChild(div);
+
+                  //Keep track of it so we can remove it later
+                  last_element = div;
+               }
+
+               //Return whatever we have so we can pass it in on the next call.
+               return last_element;
+            }
+
+            function addPipe(node1, node2, graph)
             {
                let deltaX = node1.position.x - node2.position.x;
                let deltaY = node1.position.y - node2.position.y;
                let deltaZ = node1.position.z - node2.position.z;
+               let thisFlow;
+               let found = false;
 
+               for(let i = 0; i < flowPath.length; i++)
+               {
+                  if(flowPath[i].x == node1.NodeNumber && flowPath[i].y == node2.NodeNumber)
+                  {
+                     found = true;
+                     thisFlow = flowPath[i].flow;
+                  }
+               }
+
+               //If we do not find this path in our list, there is no flow between these two nodes.
+               if(!found)
+                  thisFlow = 0;
+
+               //Distance formula to find the needed length of the edge
                let length = Math.sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
+
                let pipeGeometry = new THREE.CylinderGeometry(0.5, 0.5, length);
+
+               //Create a pipe material. Use a default delta of 0. This just means the stripes will have no offset
                let  pipeMaterial = getDynamicEdgeShader(0);
                pipe = new THREE.Mesh(pipeGeometry, pipeMaterial);
 
+               //Midpoint formula, places the pipe halfway between the two nodes
                pipe.position.set((node1.position.x + node2.position.x) / 2, (node1.position.y + node2.position.y) / 2, (node1.position.z + node2.position.z) / 2);
+
+               //The lookAt function makes the geometry's positive z axis point at the position you pass in
                pipe.lookAt(node1.position);
+
+               //With the Z-Axis pointed at the node we are trying to connect to, we just need to rotate the edge into place
                pipe.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI/2);
+
+               //Add the flow and weight to the geometry for use later
+               pipe.flow = thisFlow;
+               pipe.weight = parseInt(graph[node1.NodeNumber][node2.NodeNumber]);
+
+               //Add it to the scene
                scene.add(pipe);
 
                //This is the first edge
                if(EdgeList == null)
                {
-                  EdgeList = new LinkedList({edge:pipe, delta:0, deltaDelta:delta});
+                  //So we need to create a list that can hold all of the pipes for updating the shaders later on
+                  EdgeList = new LinkedList({edge:pipe, delta:0, flow:thisFlow});
                   return pipe;
                }
-               //Add this to the existing edge
-               EdgeList.addToHead({edge:pipe, delta:0, deltaDelta:delta});
+
+               //Add this to the existing edge list. Keep note of the flow through this edge (Also stored in the pipe object, flow could technically be removed)
+               EdgeList.addToHead({edge:pipe, delta:0, flow:thisFlow});
                return pipe;
             }
 
             function addNode(x, y, z, nodeNumber)
             {
                var nodeColor;
+
+               //Assign different colors to different nodes
                switch(nodeNumber)
                {
                   case 0:
@@ -269,13 +449,21 @@
                      nodeColor = 0x686868;
                      break;
                }
+
+               //Use default geometry and shading for nodes
                let nodeGeometry = new THREE.SphereGeometry(2);
                let nodeMaterial = new THREE.MeshLambertMaterial({color: nodeColor});
                let node = new THREE.Mesh(nodeGeometry, nodeMaterial);
 
+
                node.position.set(x, y, z);
 
+               //Add the node number to the mesh so we can access it later
+               node.NodeNumber = nodeNumber;
+
                scene.add(node);
+
+               //Return the node
                return node;
             }
 
@@ -293,6 +481,10 @@
                 return result;
             }
             function clearScene() {
+               //reset stuff
+               flowPath = [];
+               maxFlow = Number.MIN_VALUE;
+               minNonZeroFlow = Number.MAX_VALUE;
               for (let i = scene.children.length - 1; i >= 0; i--) {
                 const object = scene.children[i];
                 if (object.type === 'Mesh') {
@@ -363,20 +555,32 @@
                      u = parent[v];
                      rGraph[u][v] -= pathFlow;
                      rGraph[v][u] += pathFlow;
-                     console.log(u+" to "+v+" is now "+pathFlow)
+
+                     //loop through flow path and find (u, v, curpathflow) and add pathflow
+                     let found = false;
+                     for(let i = 0; i < flowPath.length; i++)
+                     {
+                        if(flowPath[i].x == u && flowPath[i].y == v)
+                        {
+                           found = true;
+                           flowPath[i].flow += pathFlow;
+                        }
+                     }
+
+                     //If the combination doesnt exist in the current flow path list, add it u->v has flow pathFlow
+                     //This is not the same thing as edge weight, and this number must not surpass edge weight
+                     if(!found)
+                        flowPath.push({ x: parseInt(u), y: parseInt(v), flow: pathFlow });
                   }
-                  flowPath.push({x: parseInt(x), y: parseInt(y), flow: pathFlow});
                   maxFlow += pathFlow;
                }
 
-               for(var i = 0; i < rGraph.length; i++)
-                  console.log(rGraph[i]);
                return maxFlow;
             }
          </script>
       </head>
       
-      <body onload="mainFunction();">
+      <body onload="mainFunction();" id="body">
          <div class="title" style="text-align: center"><h2>Ford Fulkerson Algorithm</h2></div>  
               <div class="col-sm-4">
                 <div class="panel panel-default">
