@@ -310,8 +310,8 @@
                   let overEdge = !overNode;
 
                   //The width and height in px of the info box
-                  let infoBoxWidth = 100;
-                  let infoBoxHeight = 100;
+                  let infoBoxWidth = 80;
+                  let infoBoxHeight = 65;
 
                   //create an info box to display info about the element we are currently hovering over
                   let div = document.createElement("div");
@@ -321,7 +321,11 @@
                   div.style.position = "absolute";
                   div.style.left = (mouse.absoluteX - infoBoxWidth / 2) + "px";
                   div.style.top = (mouse.absoluteY - (infoBoxHeight + 10)) + "px";
-                  div.style.backgroundColor = "white";
+                  div.style.color = "Black";
+                  div.style.paddingLeft = "5px";
+                  div.style.backgroundColor = "White";
+                  div.style.textAlign = "left";
+                  div.style.borderRadius = "8px";
                   if (overEdge)
                   {
                      //If we are hovering on an edge, display the flow and edge weight
@@ -659,16 +663,16 @@
                        </tr>
                      </tbody>
                    </table>
-                   <div class="col-sm-3">
-                      <label>Start Node</label>
+                   <div class="col-sm-4">
+                      <label>Source Node</label>
                       <input type="text" class="form-control" id="start"/>
                    </div>
-                   <div class="col-sm-3">
-                      <label>Target Node</label>
+                   <div class="col-sm-4">
+                      <label>Sink Node</label>
                       <input type="text" class="form-control" id="end"/>
                    </div>
                    <div class="col-sm-3">
-                      <button type="button" id="clear" class="btn btn-warning" style="margin-top: 20px; width: 100px;">Clear</button>
+                      <button type="button" id="clear" class="btn btn-warning" style=" width: 100px;">Clear</button>
                    </div>
                    <div class="col-sm-3">
                       <button type="button" id="generate" class="btn btn-primary" style="margin-top: 20px; width: 100px;">Generate</button>
