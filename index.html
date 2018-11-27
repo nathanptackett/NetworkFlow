@@ -325,7 +325,9 @@
                   if (overEdge)
                   {
                      //If we are hovering on an edge, display the flow and edge weight
-                     div.innerHTML = "Flow: " + firstIntersect.flow;
+                     div.innerHTML = pipe.u+" -> "+pipe.v;
+                     div.innerHTML += "<br />";
+                     div.innerHTML += "Flow: " + firstIntersect.flow;
                      div.innerHTML += "<br />";
                      div.innerHTML += "Weight: " + firstIntersect.weight;
                   }
@@ -347,8 +349,9 @@
                         if(flowPath[i].y == NodeNumber)
                            flowIn += flowPath[i].flow;
                      }
-
-                     div.innerHTML = "In: " + flowIn;
+                     div.innerHTML = "Node "+NodeNumber;
+                     div.innerHTML += "<br />";
+                     div.innerHTML += "In: " + flowIn;
                      div.innerHTML += "<br />";
                      div.innerHTML += "Out: " + flowOut;
                   }
@@ -403,9 +406,11 @@
                //With the Z-Axis pointed at the node we are trying to connect to, we just need to rotate the edge into place
                pipe.rotateOnAxis(new THREE.Vector3(1, 0, 0), -Math.PI/2);
 
-               //Add the flow and weight to the geometry for use later
+               //Add the info to the mesh for use later
                pipe.flow = thisFlow;
                pipe.weight = parseInt(graph[node1.NodeNumber][node2.NodeNumber]);
+               pipe.u = node1.NodeNumber;
+               pipe.v = node2.NodeNumber;
 
                //Add it to the scene
                scene.add(pipe);
