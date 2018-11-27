@@ -1,0 +1,32 @@
+#canvas {
+    width: auto;
+    height: auto;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#zero {
+    background-color: #FFFFFF;
+}
+
+#one {
+    background-color: #FFFF00;
+}
+
+#two {
+    background-color: #FF00FF;
+}
+
+#three {
+    background-color: #00FFFF;
+}
+
+#four {
+    background-color: #FF0000;
+}
+
+#five {
+    background-color: #686868;
+}
