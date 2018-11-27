@@ -251,11 +251,11 @@
                   //The rest should have a flow that is flow/maxflow * MAX_DELTA_DELTA
                   if(flow == minNonZeroFlow)
                   {
-                     deltaDelta = MAX_DELTA_DELTA;
+                     deltaDelta = MIN_DELTA_DELTA;
                   }
                   else if(flow == maxFlow)
                   {
-                     deltaDelta = MIN_DELTA_DELTA;
+                     deltaDelta = MAX_DELTA_DELTA;
                   }
                   else if(flow == 0)
                   {
