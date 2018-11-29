@@ -119,13 +119,14 @@
                let renderCalled = false;
                $('#loadexample').click(function(){
                   var array = [
-                  ["", "16", "13", "", "", ""],
-                  ["", "", "10", "12", "", ""],
-                  ["", "4", "", "", "14", ""],
-                  ["", "", "9", "", "", "20"],
-                  ["", "", "", "7", "", "4"],
-                  ["", "", "", "", "", ""]
+                     ["", "16", "13", "", "", ""],
+                     ["", "", "10", "12", "", ""],
+                     ["", "4", "", "", "14", ""],
+                     ["", "", "9", "", "", "20"],
+                     ["", "", "", "7", "", "4"],
+                     ["", "", "", "", "", ""]
                   ];
+
                   table = document.getElementById("input");
                   for(var r = 1, n = table.rows.length; r<n; r++) {
                      for( var c = 1, m=table.rows[r].cells.length; c<m; c++) {
@@ -141,22 +142,15 @@
                   var tablesInput = getTable("input");
                   if(exampleLoaded) {
                      tablesInput = [
-                  ["", "16", "13", "", "", ""],
-                  ["", "", "10", "12", "", ""],
-                  ["", "4", "", "", "14", ""],
-                  ["", "", "9", "", "", "20"],
-                  ["", "", "", "7", "", "4"],
-                  ["", "", "", "", "", ""]
-                  ];
+                        ["", "16", "13", "", "", ""],
+                        ["", "", "10", "12", "", ""],
+                        ["", "4", "", "", "14", ""],
+                        ["", "", "9", "", "", "20"],
+                        ["", "", "", "7", "", "4"],
+                        ["", "", "", "", "", ""]
+                     ];
                   }
-                  else {
-                     for(var i=1; i<tablesInput.rows.length; i++) {
-                        for(var j=0; j<tablesInput.rows[i].length;j++) {
-                           tablesInput.rows[i].cells[j].innerHTML = array[i-1][j]
-                        }
-                     }
-                  }
-                  console.log(tablesInput);
+
                   var maxFlow = fordFulkerson(tablesInput, start, end);
                   $('#alert').css("visibility", "visible");
                   $('#alert').empty();
@@ -182,6 +176,7 @@
                   clearScene();
                   $('#alert').css("visibility", "hidden");
                   $('#alert').empty();
+                  window.location.reload()
                })
 
                container = document.getElementById( 'canvas' );
@@ -527,6 +522,21 @@
                 }
                 return result;
             }
+
+            function setTable(tableId, ) {
+                var t = document.getElementById(tableId);
+                var result = [];
+                for(var j = 0; j < t.rows.length - 1; j++){
+                  result[j] = [];
+                  var r = t.rows[j+1];
+                  var inputs = r.getElementsByTagName("input");
+                  for (var i = 0; i < inputs.length; i++){
+                    result[j][i] = inputs[i].value;
+                  }
+                }
+                return result;
+            }
+
             function clearScene() {
                //reset stuff
                flowPath = [];
