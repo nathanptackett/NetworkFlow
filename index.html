@@ -115,12 +115,48 @@
 
             function mainFunction()
             {
+               let exampleLoaded = false;
                let renderCalled = false;
+               $('#loadexample').click(function(){
+                  var array = [
+                  ["", "16", "13", "", "", ""],
+                  ["", "", "10", "12", "", ""],
+                  ["", "4", "", "", "14", ""],
+                  ["", "", "9", "", "", "20"],
+                  ["", "", "", "7", "", "4"],
+                  ["", "", "", "", "", ""]
+                  ];
+                  table = document.getElementById("input");
+                  for(var r = 1, n = table.rows.length; r<n; r++) {
+                     for( var c = 1, m=table.rows[r].cells.length; c<m; c++) {
+                       table.rows[r].cells[c].innerText = array[r-1][c-1];
+                     }
+                  }
+                  exampleLoaded = true;
+               });
                $('#generate').click(function(){
                   clearScene();
                   var start = document.getElementById("start").value;
                   var end = document.getElementById("end").value;
                   var tablesInput = getTable("input");
+                  if(exampleLoaded) {
+                     tablesInput = [
+                  ["", "16", "13", "", "", ""],
+                  ["", "", "10", "12", "", ""],
+                  ["", "4", "", "", "14", ""],
+                  ["", "", "9", "", "", "20"],
+                  ["", "", "", "7", "", "4"],
+                  ["", "", "", "", "", ""]
+                  ];
+                  }
+                  else {
+                     for(var i=1; i<tablesInput.rows.length; i++) {
+                        for(var j=0; j<tablesInput.rows[i].length;j++) {
+                           tablesInput.rows[i].cells[j].innerHTML = array[i-1][j]
+                        }
+                     }
+                  }
+                  console.log(tablesInput);
                   var maxFlow = fordFulkerson(tablesInput, start, end);
                   $('#alert').css("visibility", "visible");
                   $('#alert').empty();
@@ -227,6 +263,8 @@
                   }
                }); 
             }
+
+
 
             function updateShaders()
             {
@@ -595,7 +633,7 @@
                 <div class="panel panel-default">
                   <div class="panel-heading" style="text-align: center; height: 60px;"><h4>Input Edge Weights</h4></div>
                   <div class="panel-body">
-
+                     <div class="tablediv" id = "parentdiv">
                     <table class="table table-bordered table-condensed" id="input">
                      <tbody>
                         <tr>
@@ -663,6 +701,7 @@
                        </tr>
                      </tbody>
                    </table>
+                </div>
                    <div class="col-sm-4">
                       <label>Source Node</label>
                       <input type="text" class="form-control" id="start"/>
@@ -677,7 +716,12 @@
                    <div class="col-sm-3">
                       <button type="button" id="generate" class="btn btn-primary" style="margin-top: 20px; width: 100px;">Generate</button>
                    </div>
+                     <div class="col-sm-3">
+                      <button type="button" id="loadexample" class="btn btn-info" style="margin-top: 20px; width: 100px;">Example</button>
+                   </div>
                 </div>
+                <a href=https://www.geeksforgeeks.org/ford-fulkerson-algorithm-for-maximum-flow-problem> GFG Example
+                </a>
               </div>
              </div>
           <div class="col-sm-8">
